@@ -1,0 +1,17 @@
+services:
+  streambridge:
+    build:
+      context: .
+    container_name: streambridge
+    restart: unless-stopped
+    ports:
+      - "7000:7000"
+    environment:
+      NODE_ENV: production
+      PORT: 7000
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:7000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
