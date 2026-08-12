@@ -32,6 +32,15 @@ const embyAuthLimiter = rateLimit({
 
 app.use(express.json({ limit: "2kb" }));
 
+// Lightweight health endpoint for Docker/Portainer monitoring.
+app.get("/health", (_req, res) => {
+  res.json({
+    status: "ok",
+    service: "streambridge",
+    version
+  });
+});
+
 app.post("/api/get-emby-tokens", embyAuthLimiter, async (req, res) => {
   const serverUrl = typeof req.body?.serverUrl === "string" ? req.body.serverUrl.trim() : "";
   const username  = typeof req.body?.username === "string" ? req.body.username : "";
@@ -310,5 +319,5 @@ app.get("/:cfg/configure", (req, res) => {
 // Start the server
 // ──────────────────────────────────────────────────────────────────────────
 app.listen(PORT, () =>
-  console.log(`🚀  StreamBridge up at http://localhost:${PORT}/<cfg>/manifest.json`)
+  console.log(`🚀  StreamBridge v${version} up at http://localhost:${PORT}/<cfg>/manifest.json`)
 );
