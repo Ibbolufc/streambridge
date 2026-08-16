@@ -3,591 +3,345 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>StreamBridge • Emby ↔ Stremio Setup</title>
-
-<!-- ----------  Design tokens  ---------- -->
+<title>StreamBridge • Emby & Jellyfin Setup</title>
 <style>
 :root{
-  --bg:      #11181f;
-  --panel:   #1b2530;
-  --accent:  #22c55e;           /* green-500 */
-  --accent-d:#16a34a;           /* darker hover */
-  --text:    #e6e9ef;
-  --text-dim:#9aa3b5;
-  --radius:  14px;
-  --shadow:  0 6px 24px rgba(0,0,0,.25);
-  --gap:     1.0rem;
-  font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif;
-  line-height:1.4;
-  color-scheme: dark;
+  --bg:#11181f;
+  --panel:#1b2530;
+  --panel2:#162029;
+  --border:#2b3948;
+  --accent:#22c55e;
+  --accent-dark:#16a34a;
+  --text:#e6e9ef;
+  --dim:#9aa3b5;
+  --danger:#f87171;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif;
+  color-scheme:dark;
 }
-*,*:before,*:after{box-sizing:border-box}
-body{
-  margin:0;min-height:100vh;background:var(--bg);color:var(--text);
-  display:flex;align-items:center;justify-content:center;padding:2rem 1rem;
-}
-
-h1{margin:.5rem 0 0.5rem;text-align:center;font-size:1.6rem;font-weight:600}
-h2{margin:2rem 0 .75rem;font-size:1.15rem;font-weight:600;color:var(--text-dim)}
-h3{margin:1.5rem 0 .75rem;font-size:1rem;font-weight:600;color:var(--text-dim)}
-small{font-size:.8rem;color:var(--text-dim)}
-a{color:var(--accent);text-decoration:none}
-a:hover{text-decoration:underline}
-
-/* Visual grouping and separation */
-.section-divider{
-  height:1px;background:linear-gradient(to right,transparent,#283141 20%,#283141 80%,transparent);
-  margin:2.5rem 0 1.5rem;border:none;
-}
-.form-group{
-  background:#162029;border:1px solid #1f2a35;border-radius:10px;
-  padding:1.25rem;margin-bottom:1rem;
-}
-.form-group form{display:flex;flex-direction:column;gap:0}
-.form-group button{margin-top:0.75rem}
-.advanced-group{
-  background:#162029;border:1px solid #1f2a35;border-radius:10px;
-  padding:1.25rem;margin-top:0;
-}
-.advanced-group h3{margin-top:0;margin-bottom:1.25rem;padding-bottom:0.75rem;border-bottom:1px solid #1f2a35}
-.field-group{margin-bottom:1.25rem}
-.field-group:last-child{margin-bottom:0}
-/* Standard label styling - all labels in field-group */
-.field-group > label{font-weight:500;color:var(--text)}
-/* Regular labels (not flex/checkbox) */
-.field-group > label:not([style*="display:flex"]){margin-bottom:0.4rem;margin-top:0}
-.field-group > label:not([style*="display:flex"]) + input{margin-top:0}
-/* Labels with descriptions - small text appears right after label */
-.field-group > label + small{margin-top:-0.15rem;margin-bottom:0.5rem}
-.field-group > label + small + input{margin-top:0}
-/* Checkbox labels (flex containers with inline checkbox) */
-.field-group > label[style*="display:flex"]{margin-bottom:0.5rem;margin-top:0;font-weight:normal}
-/* Small text after checkbox labels */
-.field-group > label[style*="display:flex"] + small{margin-top:0;margin-bottom:0}
-.form-output{
-  background:#162029;border:1px solid #1f2a35;border-radius:10px;
-  padding:1.25rem;margin-top:1rem;
-}
-
-.panel{
-  background:var(--panel);padding:2rem;border-radius:var(--radius);
-  width:100%;max-width:600px;box-shadow:var(--shadow);
-}
-form{display:flex;flex-direction:column;gap:0}
-label{font-size:.9rem;display:block;font-weight:500;color:var(--text)}
-small{font-size:.8rem;color:var(--text-dim);line-height:1.4;display:block}
-input{
-  width:100%;padding:.65rem .8rem;border-radius:8px;border:1px solid #334155;
-  background:#0f1722;color:var(--text);font-size:.95rem;
-}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);padding:32px 16px}
+.panel{width:100%;max-width:650px;margin:auto;background:var(--panel);border-radius:16px;padding:30px;box-shadow:0 8px 28px rgba(0,0,0,.28)}
+h1{text-align:center;margin:0 0 8px;font-size:1.75rem}
+.subtitle{text-align:center;color:var(--dim);margin:0 0 28px;font-size:.9rem}
+a{color:var(--accent)}
+hr{border:0;height:1px;background:var(--border);margin:28px 0}
+h2{font-size:1.15rem;margin:0 0 15px;color:#cbd5e1}
+h3{font-size:.95rem;margin:0 0 12px;color:#cbd5e1}
+.server-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+.server-card{position:relative;background:var(--panel2);border:2px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:.15s;text-align:left}
+.server-card:hover{border-color:#526477;transform:translateY(-1px)}
+.server-card.selected{border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,94,.1)}
+.server-card input{position:absolute;opacity:0;pointer-events:none}
+.server-name{display:block;font-weight:700;font-size:1.05rem;margin-bottom:4px}
+.server-desc{display:block;font-size:.78rem;color:var(--dim)}
+.box{background:var(--panel2);border:1px solid #243241;border-radius:12px;padding:18px;margin-bottom:14px}
+.field{margin-bottom:16px}.field:last-child{margin-bottom:0}
+label{display:block;font-size:.88rem;font-weight:600;margin-bottom:6px}
+small{display:block;color:var(--dim);font-size:.77rem;line-height:1.4;margin-top:5px}
+input[type=text],input[type=password]{width:100%;padding:11px 12px;border-radius:8px;border:1px solid #3b4b5e;background:#0f1722;color:var(--text);font-size:.95rem}
 input:focus{outline:2px solid var(--accent);outline-offset:0}
-input[type="checkbox"]{width:auto;margin:0 .5rem 0 0;cursor:pointer}
-form#cfg{display:flex;flex-direction:column;gap:0}
-form#cfg > *{width:100%}
-button{
-  display:inline-flex;align-items:center;justify-content:center;
-  gap:.45rem;padding:.75rem 1rem;font-weight:600;font-size:.96rem;
-  border:0;border-radius:8px;background:var(--accent);color:#fff;cursor:pointer;
-  transition:.18s transform,.18s background;width:100%;
-}
-button:hover{background:var(--accent-d);transform:translateY(-1px)}
-button:disabled{opacity:.45;cursor:default;transform:none}
-
-pre{
-  background:#0f1722;border:1px solid #283141;color:#e2e8f0;
-  padding:.9rem;border-radius:8px;white-space:pre-wrap;word-break:break-all;
-  margin:0;
-}
-.out{margin-top:1rem;animation:fade .35s ease}
-@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
-.toast{
-  position:fixed;bottom:1.1rem;left:50%;transform:translateX(-50%);
-  background:#272e38;padding:.7rem 1.4rem;border-radius:8px;
-  box-shadow:var(--shadow);font-size:.9rem;opacity:0;pointer-events:none;
-  transition:opacity .25s ease;
-}
-.toast.show{opacity:1}
-
-/* JELLYFIN: Server Type Selection Cards - Commented out for future Jellyfin support
-.server-selection {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-.server-card {
-  background: #162029;
-  border: 2px solid #1f2a35;
-  border-radius: 12px;
-  padding: 1.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: center;
-  position: relative;
-}
-.server-card:hover {
-  border-color: #334155;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-.server-card.selected {
-  border-color: var(--accent);
-  background: #1a2e1f;
-  box-shadow: 0 0 0 3px rgba(34,197,94,0.1);
-}
-.server-card.selected::after {
-  content: "✓";
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  width: 24px;
-  height: 24px;
-  background: var(--accent);
-  color: #fff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.875rem;
-  font-weight: bold;
-}
-.server-card-name {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 0.25rem;
-}
-.server-card-desc {
-  font-size: 0.85rem;
-  color: var(--text-dim);
-}
-
-@media (max-width: 640px) {
-  .server-selection {
-    grid-template-columns: 1fr;
-  }
-}
-*/
-
-iframe.floatingchat-container,
-iframe[id*="kofi-wo-container"] {
-  width: 180px !important;      /* Match button's max width */
-  height: 46px !important;      /* Match button's height */
-  border-radius: 100px !important; /* Make pill-shaped like button */
-  overflow: hidden;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
+.check{display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer}.check input{margin:0}
+.quality-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.quality-grid .check{font-size:.86rem}
+button{width:100%;border:0;border-radius:8px;padding:12px 14px;background:var(--accent);color:white;font-size:.95rem;font-weight:700;cursor:pointer;transition:.15s}
+button:hover{background:var(--accent-dark)}button:disabled{opacity:.5;cursor:default}
+.output{display:none;background:var(--panel2);border:1px solid #243241;border-radius:12px;padding:18px;margin-top:14px}
+.output.show{display:block}
+pre{white-space:pre-wrap;word-break:break-all;background:#0f1722;border:1px solid #2c3b4c;border-radius:8px;padding:11px;margin:8px 0 12px;font-size:.78rem}
+.install-link{display:block;text-align:center;background:#0f1722;border:1px solid var(--accent);padding:11px;border-radius:8px;margin-bottom:12px;text-decoration:none;font-weight:700}
+.status{font-size:.83rem;margin-top:10px;color:var(--dim)}
+.status.error{color:var(--danger)}
+.backend-badge{display:inline-block;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#86efac;border-radius:999px;padding:3px 9px;font-size:.72rem;margin-left:6px;vertical-align:2px}
+@media(max-width:560px){body{padding:20px 10px}.panel{padding:22px 18px}.server-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-
 <div class="panel">
   <h1>StreamBridge Setup</h1>
-  <p style="text-align:center;margin-top:0.5rem;font-size:.8rem;color:var(--text-dim)">
-    Stream from your Emby server to Stremio<br>
-    Need help? See <a href="https://github.com/h4harsimran/streambridge" target="_blank">docs on GitHub</a>.
-  </p>
-  
-  <hr class="section-divider">
-  <!--  1· Helper  -->
-  <h2>1 · Fetch User ID & Token</h2>
-  <div class="form-group">
+  <p class="subtitle">Connect an Emby or Jellyfin server to Stremio<br><a href="https://github.com/Ibbolufc/streambridge" target="_blank" rel="noopener">StreamBridge on GitHub</a></p>
+
+  <h2>1 · Choose your media server</h2>
+  <div class="server-grid" id="serverGrid">
+    <label class="server-card selected" data-type="emby">
+      <input type="radio" name="serverChoice" value="emby" checked>
+      <span class="server-name">Emby</span>
+      <span class="server-desc">Connect to an Emby media server</span>
+    </label>
+    <label class="server-card" data-type="jellyfin">
+      <input type="radio" name="serverChoice" value="jellyfin">
+      <span class="server-name">Jellyfin</span>
+      <span class="server-desc">Connect to a Jellyfin media server</span>
+    </label>
+  </div>
+
+  <h2>2 · Fetch User ID & Token <span class="backend-badge" id="authBadge">Emby</span></h2>
+  <div class="box">
     <form id="helper">
-      <div class="field-group">
-        <label>Server URL</label>
-        <input name="url" placeholder="http://example.com:8096 or https://..." required>
+      <div class="field">
+        <label for="serverUrl">Server URL</label>
+        <input id="serverUrl" name="url" type="text" placeholder="https://media.example.com" required>
+        <small>Use the public URL that StreamBridge can reach.</small>
       </div>
-      <div class="field-group">
-        <label>Server Username</label>
-        <input name="user" placeholder="Your server username" required>
+      <div class="field">
+        <label for="serverUser">Server Username</label>
+        <input id="serverUser" name="user" type="text" placeholder="Your server username" required>
       </div>
-      <div class="field-group">
-        <label>Server Password</label>
-        <input name="pass" type="password" placeholder="Your server password">
+      <div class="field">
+        <label for="serverPass">Server Password</label>
+        <input id="serverPass" name="pass" type="password" placeholder="Your server password">
       </div>
-      <button id="helperBtn">Get Access Info</button>
+      <button id="helperBtn" type="submit">Get Access Info</button>
+      <div id="helperStatus" class="status"></div>
     </form>
   </div>
 
-  <div id="helperOut" class="out form-output" style="display:none">
+  <div id="helperOut" class="output">
     <small>User ID</small><pre id="uid"></pre>
-    <small style="margin-top:.6rem;display:block">Access Token</small><pre id="tok"></pre>
+    <small>Access Token</small><pre id="tok"></pre>
   </div>
 
-  <!--  2· Configure  -->
-  <hr class="section-divider">
-  <h2>2 · Generate Install Link</h2>
+  <hr>
+
+  <h2>3 · Generate Install Link <span class="backend-badge" id="configBadge">Emby</span></h2>
   <form id="cfg">
-    <div class="form-group">
-      <!-- Hidden input to store server type from selection -->
-      <input type="hidden" name="serverType" id="cfgServerType" value="emby">
-      <div class="field-group">
+    <input type="hidden" name="serverType" id="cfgServerType" value="emby">
+    <div class="box">
+      <div class="field">
         <label>Server URL</label>
-        <input name="serverUrl" required>
+        <input name="serverUrl" type="text" required>
       </div>
-      <div class="field-group">
+      <div class="field">
         <label>User ID</label>
-        <input name="userId" required>
+        <input name="userId" type="text" required>
       </div>
-      <div class="field-group">
+      <div class="field">
         <label>Access Token / API Key</label>
-        <input name="accessToken" required>
+        <input name="accessToken" type="text" required>
       </div>
     </div>
-    
-    <!-- New configuration options -->
-    <div class="advanced-group">
+
+    <div class="box">
       <h3>Advanced Options</h3>
-      
-      <div class="field-group">
-        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;margin:0;">
-          <input type="checkbox" name="showServerName">
-          <span>Show server name in addon name</span>
-        </label>
-        <small>Better to keep it unchecked for privacy unless you are installing multiple instances of this addon</small>
+      <div class="field">
+        <label class="check"><input type="checkbox" name="showServerName"> Show server hostname in add-on name</label>
+        <small>Usually best left off for privacy.</small>
       </div>
-      
-      <div class="field-group">
-        <label class="description-after">Stream Name (displayed in Stremio)</label>
-        <small id="streamNameHint">Custom name for streams (defaults to "Emby")</small>
-        <input name="streamName" id="streamNameInput" placeholder="Emby" value="">
+      <div class="field">
+        <label for="streamName">Stream Name</label>
+        <input id="streamName" name="streamName" type="text" placeholder="Emby">
+        <small id="streamNameHint">Defaults to “Emby”.</small>
       </div>
-      
-      <div class="field-group">
-        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;margin:0;">
-          <input type="checkbox" name="includeSubtitles" id="includeSubtitles" checked>
-          <span>Include subtitles from Emby</span>
-        </label>
-        <small>Uncheck to opt out of subtitles provided by your server</small>
+      <div class="field">
+        <label class="check"><input type="checkbox" name="includeSubtitles" checked> Include subtitles from server</label>
       </div>
-      
-      <div class="field-group">
-        <label class="description-after">Hide Stream Types</label>
-        <small>Check types to hide from results</small>
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.6rem;margin-top:0.5rem;">
-          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-weight:normal;margin:0;">
-            <input type="checkbox" name="hideStreamTypes" value="4K">
-            <span>4K</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-weight:normal;margin:0;">
-            <input type="checkbox" name="hideStreamTypes" value="1080p">
-            <span>1080p</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-weight:normal;margin:0;">
-            <input type="checkbox" name="hideStreamTypes" value="DV">
-            <span>Dolby Vision (DV)</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-weight:normal;margin:0;">
-            <input type="checkbox" name="hideStreamTypes" value="HDR">
-            <span>All HDR</span>
-          </label>
+      <div class="field">
+        <label>Hide Stream Types</label>
+        <div class="quality-grid">
+          <label class="check"><input type="checkbox" name="hideStreamTypes" value="4K"> 4K</label>
+          <label class="check"><input type="checkbox" name="hideStreamTypes" value="1080p"> 1080p</label>
+          <label class="check"><input type="checkbox" name="hideStreamTypes" value="DV"> Dolby Vision</label>
+          <label class="check"><input type="checkbox" name="hideStreamTypes" value="HDR"> All HDR</label>
         </div>
       </div>
     </div>
-    
-    <button id="cfgBtn" style="margin-top:1rem">Create & Install Addon</button>
+
+    <button type="submit">Create Install Link</button>
   </form>
 
-  <div id="cfgOut" class="out form-output"></div>
-
+  <div id="cfgOut" class="output"></div>
 </div>
 
-<!-- ---------- Toast ---------- -->
-<div id="toast" class="toast">Copied!</div>
-
-<!-- ----------  Scripts  ---------- -->
 <script>
-const $ = sel=>document.querySelector(sel);
-const toast = msg =>{
-  const t=$("#toast");t.textContent=msg;t.classList.add("show");
-  setTimeout(()=>t.classList.remove("show"),2200);
-};
+const $ = selector => document.querySelector(selector);
+let selectedServerType = 'emby';
 
-// Function to sync server type throughout the form (defaults to Emby)
-function syncServerType(serverType) {
-  // Always default to Emby
-  const serverTypeToUse = "emby";
-  const cfgServerType = $("#cfgServerType");
-  const streamNameInput = $("#streamNameInput");
-  const streamNameHint = $("#streamNameHint");
-  
-  // JELLYFIN: Card selection logic commented out for future Jellyfin support
-  // const embyCard = $("#serverCardEmby");
-  // const jellyfinCard = $("#serverCardJellyfin");
-  
-  // Update hidden input
-  if (cfgServerType) {
-    cfgServerType.value = serverTypeToUse;
-  }
-  
-  // JELLYFIN: Card selection visual state update commented out
-  // if (embyCard && jellyfinCard) {
-  //   if (serverType === "jellyfin") {
-  //     embyCard.classList.remove("selected");
-  //     jellyfinCard.classList.add("selected");
-  //   } else {
-  //     embyCard.classList.add("selected");
-  //     jellyfinCard.classList.remove("selected");
-  //   }
-  // }
-  
-  // Update stream name placeholder and hint (always Emby)
-  if (streamNameInput && streamNameHint) {
-    const defaultName = "Emby";
-    const currentValue = streamNameInput.value.trim();
-    
-    // Update placeholder
-    streamNameInput.placeholder = defaultName;
-    
-    // Only auto-update the value if it's empty or matches the old default
-    // Don't overwrite custom values
-    if (!currentValue || currentValue === "Emby" || currentValue === "Jellyfin") {
-      // Only clear if it was the opposite default
-      // If empty, leave it empty so user can see the placeholder
-      if (currentValue && currentValue !== defaultName) {
-        streamNameInput.value = "";
-      }
-    }
-    
-    streamNameHint.textContent = `Custom name for streams (defaults to "${defaultName}")`;
-  }
+function labelFor(type){ return type === 'jellyfin' ? 'Jellyfin' : 'Emby'; }
+
+function setServerType(type){
+  selectedServerType = type === 'jellyfin' ? 'jellyfin' : 'emby';
+  document.querySelectorAll('.server-card').forEach(card => {
+    const selected = card.dataset.type === selectedServerType;
+    card.classList.toggle('selected', selected);
+    card.querySelector('input').checked = selected;
+  });
+
+  const label = labelFor(selectedServerType);
+  $('#cfgServerType').value = selectedServerType;
+  $('#authBadge').textContent = label;
+  $('#configBadge').textContent = label;
+  $('#streamName').placeholder = label;
+  $('#streamNameHint').textContent = `Defaults to “${label}”.`;
 }
 
-// JELLYFIN: Server card selection handlers commented out for future Jellyfin support
-// const embyCardEl = $("#serverCardEmby");
-// const jellyfinCardEl = $("#serverCardJellyfin");
-// 
-// if (embyCardEl) {
-//   embyCardEl.addEventListener("click", ()=>{
-//     syncServerType("emby");
-//   });
-// }
-// if (jellyfinCardEl) {
-//   jellyfinCardEl.addEventListener("click", ()=>{
-//     syncServerType("jellyfin");
-//   });
-// }
+document.querySelectorAll('.server-card').forEach(card => {
+  card.addEventListener('click', () => setServerType(card.dataset.type));
+});
 
-// Initialize server type on page load (default to Emby)
-syncServerType("emby");
+function normalizeUrl(value){ return String(value || '').trim().replace(/\/+$/, ''); }
 
-/*── 2 · Helper ──*/
-async function authenticateEmby(serverUrl, username, password) {
-  const res = await fetch("/api/get-emby-tokens", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      serverUrl: serverUrl,
-      username: username,
-      password: password || ""
+async function authenticateServer(serverUrl, username, password){
+  const response = await fetch('/api/get-server-tokens', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      serverType:selectedServerType,
+      serverUrl,
+      username,
+      password:password || ''
     })
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(data.err || `HTTP ${res.status}`);
-  }
-  return {
-    User: { Id: data.Id },
-    AccessToken: data.AccessToken,
-    ServerId: data.ServerId
-  };
+
+  const data = await response.json().catch(() => ({}));
+  if(!response.ok) throw new Error(data.err || `HTTP ${response.status}`);
+  return data;
 }
 
-// JELLYFIN: Jellyfin authentication function - Commented out for future Jellyfin support
-// async function authenticateJellyfin(url, user, pass) {
-//   try {
-//     const res = await fetch(`${url}/Users/authenticatebyname`, {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json",
-//         "Accept": "application/json",
-//         "Authorization":
-//           'MediaBrowser Client="StreamBridge", Device="WebHelper", DeviceId="webhelper", Version="1.2.0"'
-//       },
-//       body: JSON.stringify({ Username: user, Pw: pass || "" })
-//     });
-//     
-//     if (!res.ok) {
-//       let errorMessage = "Authentication failed";
-//       try {
-//         const errorData = await res.json();
-//         errorMessage = errorData.Message || errorData.message || `HTTP ${res.status}: ${res.statusText}`;
-//       } catch {
-//         errorMessage = `HTTP ${res.status}: ${res.statusText}`;
-//       }
-//       throw new Error(errorMessage);
-//     }
-//     
-//     const data = await res.json();
-//     return data;
-//   } catch (err) {
-//     // Re-throw with better context if it's not already our error
-//     if (err.message && !err.message.includes("HTTP") && !err.message.includes("Authentication")) {
-//       throw new Error(`Network error: ${err.message}`);
-//     }
-//     throw err;
-//   }
-// }
+$('#helper').addEventListener('submit', async event => {
+  event.preventDefault();
+  const form = new FormData(event.target);
+  const url = normalizeUrl(form.get('url'));
+  const username = String(form.get('user') || '');
+  const password = String(form.get('pass') || '');
+  const button = $('#helperBtn');
+  const status = $('#helperStatus');
 
-$("#helper").addEventListener("submit", async e=>{
-  e.preventDefault();
-  const f=new FormData(e.target),
-        urlRaw=f.get("url"),
-        user=f.get("user"),
-        pass=f.get("pass");
-  const btn=$("#helperBtn");
-  btn.disabled=true;btn.textContent="Fetching…";
-
-  // Validate and normalize URL
-  if(!urlRaw || !urlRaw.trim()) {
-    alert("❌ Please enter a server URL.");
-    btn.disabled=false;btn.textContent="Get Access Info";
-    return;
-  }
-  
-  const url = urlRaw.trim().replace(/\/+$/,"");
-  if (!url.startsWith("http://") && !url.startsWith("https://")) {
-    alert("❌ URL must start with http:// or https://");
-    btn.disabled=false;btn.textContent="Get Access Info";
+  if(!url.startsWith('http://') && !url.startsWith('https://')){
+    status.className = 'status error';
+    status.textContent = 'Server URL must start with http:// or https://';
     return;
   }
 
-  // Basic URL format validation
-  try {
-    new URL(url);
-  } catch {
-    alert("❌ Please enter a valid URL (e.g., https://example.com:8096)");
-    btn.disabled=false;btn.textContent="Get Access Info";
+  try { new URL(url); }
+  catch {
+    status.className = 'status error';
+    status.textContent = 'Please enter a valid server URL.';
     return;
   }
 
-  // Always use Emby (Jellyfin support commented out for future)
-  const serverType = "emby";
+  button.disabled = true;
+  button.textContent = `Connecting to ${labelFor(selectedServerType)}…`;
+  status.className = 'status';
+  status.textContent = '';
 
   try{
-    // JELLYFIN: Always use Emby authentication - Jellyfin support commented out
-    // const data = serverType === "jellyfin" 
-    //   ? await authenticateJellyfin(url, user, pass)
-    //   : await authenticateEmby(url, user, pass);
-    const data = await authenticateEmby(url, user, pass);
+    const data = await authenticateServer(url, username, password);
+    $('#uid').textContent = data.Id || '';
+    $('#tok').textContent = data.AccessToken || '';
+    $('#helperOut').classList.add('show');
 
-    $("#uid").textContent = data?.User?.Id || "";
-    $("#tok").textContent = data?.AccessToken || "";
-    $("#helperOut").style.display="block";
+    const cfg = $('#cfg');
+    cfg.serverUrl.value = url;
+    cfg.userId.value = data.Id || '';
+    cfg.accessToken.value = data.AccessToken || '';
 
-    /* autofill config form */
-    const cf=$("#cfg");
-    // Sync server type to Step 2
-    syncServerType(serverType);
-    // Autofill form fields
-    cf.serverUrl.value   ||= url;
-    cf.userId.value      ||= data?.User?.Id||"";
-    cf.accessToken.value ||= data?.AccessToken||"";
-  }catch(err){
-    alert("❌ "+err.message);
+    status.textContent = `${labelFor(selectedServerType)} connected successfully.`;
+  }catch(error){
+    status.className = 'status error';
+    status.textContent = error.message;
   }finally{
-    btn.disabled=false;btn.textContent="Get Access Info";
+    button.disabled = false;
+    button.textContent = 'Get Access Info';
   }
 });
 
-/*── 3 · Config ──*/
-$("#cfg").addEventListener("submit",e=>{
-  e.preventDefault();
-  const formData = new FormData(e.target);
-  const cfg = {};
-  
-  // Always default to Emby (Jellyfin support commented out for future)
-  // JELLYFIN: Server type selection logic commented out
-  // const selectedServerTypeEl = $("#selectedServerType");
-  // const serverTypeFromSelection = selectedServerTypeEl ? selectedServerTypeEl.value : null;
-  const serverTypeFromForm = formData.get("serverType");
-  cfg.serverType = serverTypeFromForm || "emby";
-  
-  // JELLYFIN: Validation commented out - always use Emby
-  // Validate server type is either 'emby' or 'jellyfin'
-  // if (cfg.serverType !== "emby" && cfg.serverType !== "jellyfin") {
-  //   cfg.serverType = "emby"; // Default to emby if invalid
-  // }
-  cfg.serverType = "emby"; // Always use Emby
-  
-  // Required fields
-  const serverUrlRaw = formData.get("serverUrl");
-  cfg.serverUrl = serverUrlRaw ? serverUrlRaw.trim().replace(/\/+$/, "") : "";
-  cfg.userId = formData.get("userId");
-  cfg.accessToken = formData.get("accessToken");
-  
-  // Validate required fields
-  if (!cfg.serverUrl || !cfg.userId || !cfg.accessToken) {
-    alert("❌ Please fill in all required fields (Server URL, User ID, and Access Token).");
-    return;
-  }
-  
-  // Validate URL format (HTTPS not required in Step 3)
-  try {
-    new URL(cfg.serverUrl);
-  } catch {
-    alert("❌ Please enter a valid URL (e.g., https://example.com:8096 or http://localhost:8096)");
-    return;
-  }
-  
-  // New optional fields
-  // showServerName: convert checkbox to boolean (checked = true, unchecked = false)
-  // FormData.get() returns the value for checked boxes, or null for unchecked
-  const showServerNameValue = formData.get("showServerName");
-  cfg.showServerName = showServerNameValue !== null && showServerNameValue !== undefined;
-  
-  // streamName: use provided value or leave empty for auto-detection based on server type
-  const streamName = formData.get("streamName");
-  if (streamName && streamName.trim()) {
-    cfg.streamName = streamName.trim();
-  }
-  
-  // hideStreamTypes: collect all checked values into an array
-  const hideStreamTypes = formData.getAll("hideStreamTypes");
-  if (hideStreamTypes.length > 0) {
-    cfg.hideStreamTypes = hideStreamTypes;
-  }
-  
-  // includeSubtitles: only set when user opts out (unchecked). Omit when checked for backward compatibility (default = include).
-  if (formData.get("includeSubtitles") === null || formData.get("includeSubtitles") === undefined) {
-    cfg.includeSubtitles = false;
-  }
+function encodeConfig(config){
+  const bytes = new TextEncoder().encode(JSON.stringify(config));
+  let binary = '';
+  bytes.forEach(byte => binary += String.fromCharCode(byte));
+  return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
 
-  const cfg64=btoa(unescape(encodeURIComponent(JSON.stringify(cfg))))
-                .replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+function decodeConfig(value){
+  let base64 = value.replace(/-/g,'+').replace(/_/g,'/');
+  while(base64.length % 4) base64 += '=';
+  const binary = atob(base64);
+  const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
 
-  const httpURL    = `${location.origin}/${cfg64}/manifest.json`;
-  const stremioURL = `stremio://${location.host}/${cfg64}/manifest.json`;
+$('#cfg').addEventListener('submit', event => {
+  event.preventDefault();
+  const form = new FormData(event.target);
+  const serverUrl = normalizeUrl(form.get('serverUrl'));
 
-  // Create output HTML (URLs are safe - base64 encoded, no XSS risk)
-  const urlDisplay = document.createElement('pre');
-  urlDisplay.textContent = httpURL;
-  
-  const copyBtn = document.createElement('button');
-  copyBtn.className = 'copy-btn';
-  copyBtn.textContent = 'Copy URL';
-  copyBtn.onclick = () => {
-    navigator.clipboard.writeText(httpURL).then(() => toast('Copied URL'));
+  const cfg = {
+    serverType:selectedServerType,
+    serverUrl,
+    userId:String(form.get('userId') || ''),
+    accessToken:String(form.get('accessToken') || ''),
+    showServerName:form.get('showServerName') !== null
   };
 
-  $("#cfgOut").innerHTML = `
-    <p><a href="${stremioURL}">➜ Install directly in Stremio</a></p>
-    <small>Or copy this URL and add it via <em>Add-ons → Install via URL</em>:</small>
-  `;
-  $("#cfgOut").appendChild(urlDisplay);
-  $("#cfgOut").appendChild(copyBtn);
-});
-</script>
-<script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
-<script>
-  kofiWidgetOverlay.draw('harsimranjeetsingh4', {
-    'type': 'floating-chat',
-    'floating-chat.donateButton.text': 'Support me',
-    'floating-chat.donateButton.background-color': '#22c55e',
-    'floating-chat.donateButton.text-color': '#fff'
+  if(!cfg.serverUrl || !cfg.userId || !cfg.accessToken){
+    alert('Please fill in Server URL, User ID and Access Token.');
+    return;
+  }
+
+  try { new URL(cfg.serverUrl); }
+  catch {
+    alert('Please enter a valid server URL.');
+    return;
+  }
+
+  const streamName = String(form.get('streamName') || '').trim();
+  if(streamName) cfg.streamName = streamName;
+
+  const hiddenTypes = form.getAll('hideStreamTypes');
+  if(hiddenTypes.length) cfg.hideStreamTypes = hiddenTypes;
+
+  if(form.get('includeSubtitles') === null) cfg.includeSubtitles = false;
+
+  const encoded = encodeConfig(cfg);
+  const manifestUrl = `${location.origin}/${encoded}/manifest.json`;
+  const stremioUrl = `stremio://${location.host}/${encoded}/manifest.json`;
+  const out = $('#cfgOut');
+
+  out.innerHTML = '';
+  const install = document.createElement('a');
+  install.href = stremioUrl;
+  install.className = 'install-link';
+  install.textContent = `Install ${labelFor(selectedServerType)} StreamBridge in Stremio`;
+
+  const label = document.createElement('small');
+  label.textContent = 'Or copy this manifest URL:';
+
+  const pre = document.createElement('pre');
+  pre.textContent = manifestUrl;
+
+  const copy = document.createElement('button');
+  copy.type = 'button';
+  copy.textContent = 'Copy Manifest URL';
+  copy.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(manifestUrl);
+    copy.textContent = 'Copied!';
+    setTimeout(() => copy.textContent = 'Copy Manifest URL', 1500);
   });
+
+  out.append(install, label, pre, copy);
+  out.classList.add('show');
+});
+
+// If opened through /<cfg>/configure, prefill the existing configuration.
+(function prefillFromPath(){
+  const parts = location.pathname.split('/').filter(Boolean);
+  if(parts.length < 2 || parts[parts.length - 1] !== 'configure') return;
+
+  try{
+    const cfg = decodeConfig(parts[parts.length - 2]);
+    setServerType(cfg.serverType || 'emby');
+    const form = $('#cfg');
+    form.serverUrl.value = cfg.serverUrl || '';
+    form.userId.value = cfg.userId || '';
+    form.accessToken.value = cfg.accessToken || '';
+    form.showServerName.checked = cfg.showServerName === true;
+    form.streamName.value = cfg.streamName || '';
+    form.includeSubtitles.checked = cfg.includeSubtitles !== false;
+    document.querySelectorAll('input[name="hideStreamTypes"]').forEach(input => {
+      input.checked = Array.isArray(cfg.hideStreamTypes) && cfg.hideStreamTypes.includes(input.value);
+    });
+  }catch{}
+})();
+
+setServerType(selectedServerType);
 </script>
 </body>
 </html>
