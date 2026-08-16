@@ -9,10 +9,6 @@ services:
     environment:
       NODE_ENV: production
       PORT: 7000
-      JELLYFIN_INDEX_PAGE_SIZE: 100
-      JELLYFIN_FALLBACK_PAGE_SIZE: 25
-      JELLYFIN_INDEX_MAX_PAGES: 2000
-      JELLYFIN_REQUEST_TIMEOUT_MS: 30000
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:7000/health"]
       interval: 30s
