@@ -1,347 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>StreamBridge • Emby & Jellyfin Setup</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>StreamBridge • Emby Setup</title>
 <style>
-:root{
-  --bg:#11181f;
-  --panel:#1b2530;
-  --panel2:#162029;
-  --border:#2b3948;
-  --accent:#22c55e;
-  --accent-dark:#16a34a;
-  --text:#e6e9ef;
-  --dim:#9aa3b5;
-  --danger:#f87171;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif;
-  color-scheme:dark;
-}
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);padding:32px 16px}
-.panel{width:100%;max-width:650px;margin:auto;background:var(--panel);border-radius:16px;padding:30px;box-shadow:0 8px 28px rgba(0,0,0,.28)}
-h1{text-align:center;margin:0 0 8px;font-size:1.75rem}
-.subtitle{text-align:center;color:var(--dim);margin:0 0 28px;font-size:.9rem}
-a{color:var(--accent)}
-hr{border:0;height:1px;background:var(--border);margin:28px 0}
-h2{font-size:1.15rem;margin:0 0 15px;color:#cbd5e1}
-h3{font-size:.95rem;margin:0 0 12px;color:#cbd5e1}
-.server-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
-.server-card{position:relative;background:var(--panel2);border:2px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:.15s;text-align:left}
-.server-card:hover{border-color:#526477;transform:translateY(-1px)}
-.server-card.selected{border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,94,.1)}
-.server-card input{position:absolute;opacity:0;pointer-events:none}
-.server-name{display:block;font-weight:700;font-size:1.05rem;margin-bottom:4px}
-.server-desc{display:block;font-size:.78rem;color:var(--dim)}
-.box{background:var(--panel2);border:1px solid #243241;border-radius:12px;padding:18px;margin-bottom:14px}
-.field{margin-bottom:16px}.field:last-child{margin-bottom:0}
-label{display:block;font-size:.88rem;font-weight:600;margin-bottom:6px}
-small{display:block;color:var(--dim);font-size:.77rem;line-height:1.4;margin-top:5px}
-input[type=text],input[type=password]{width:100%;padding:11px 12px;border-radius:8px;border:1px solid #3b4b5e;background:#0f1722;color:var(--text);font-size:.95rem}
-input:focus{outline:2px solid var(--accent);outline-offset:0}
-.check{display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer}.check input{margin:0}
-.quality-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.quality-grid .check{font-size:.86rem}
-button{width:100%;border:0;border-radius:8px;padding:12px 14px;background:var(--accent);color:white;font-size:.95rem;font-weight:700;cursor:pointer;transition:.15s}
-button:hover{background:var(--accent-dark)}button:disabled{opacity:.5;cursor:default}
-.output{display:none;background:var(--panel2);border:1px solid #243241;border-radius:12px;padding:18px;margin-top:14px}
-.output.show{display:block}
-pre{white-space:pre-wrap;word-break:break-all;background:#0f1722;border:1px solid #2c3b4c;border-radius:8px;padding:11px;margin:8px 0 12px;font-size:.78rem}
-.install-link{display:block;text-align:center;background:#0f1722;border:1px solid var(--accent);padding:11px;border-radius:8px;margin-bottom:12px;text-decoration:none;font-weight:700}
-.status{font-size:.83rem;margin-top:10px;color:var(--dim)}
-.status.error{color:var(--danger)}
-.backend-badge{display:inline-block;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#86efac;border-radius:999px;padding:3px 9px;font-size:.72rem;margin-left:6px;vertical-align:2px}
-@media(max-width:560px){body{padding:20px 10px}.panel{padding:22px 18px}.server-grid{grid-template-columns:1fr}}
+:root{--bg:#11181f;--panel:#1b2530;--panel2:#162029;--border:#2b3948;--accent:#22c55e;--accent2:#16a34a;--text:#e6e9ef;--dim:#9aa3b5;--danger:#f87171;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);padding:28px 14px}.panel{width:100%;max-width:650px;margin:auto;background:var(--panel);border-radius:16px;padding:28px;box-shadow:0 8px 28px rgba(0,0,0,.28)}h1{text-align:center;margin:0 0 8px;font-size:1.8rem}.subtitle{text-align:center;color:var(--dim);margin:0 0 28px;font-size:.9rem}a{color:var(--accent)}hr{border:0;height:1px;background:var(--border);margin:28px 0}h2{font-size:1.15rem;margin:0 0 15px;color:#cbd5e1}h3{font-size:.95rem;margin:0 0 14px;color:#cbd5e1}.box{background:var(--panel2);border:1px solid #243241;border-radius:12px;padding:18px;margin-bottom:14px}.field{margin-bottom:16px}.field:last-child{margin-bottom:0}label{display:block;font-size:.88rem;font-weight:600;margin-bottom:6px}small{display:block;color:var(--dim);font-size:.77rem;line-height:1.4;margin-top:5px}input[type=text],input[type=password]{width:100%;padding:11px 12px;border-radius:8px;border:1px solid #3b4b5e;background:#0f1722;color:var(--text);font-size:.95rem}input:focus{outline:2px solid var(--accent)}.check{display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer}.check input{margin:0}.quality{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.quality .check{font-size:.86rem}button{width:100%;border:0;border-radius:8px;padding:12px 14px;background:var(--accent);color:white;font-size:.95rem;font-weight:700;cursor:pointer}button:hover{background:var(--accent2)}button:disabled{opacity:.5;cursor:default}.output{display:none;background:var(--panel2);border:1px solid #243241;border-radius:12px;padding:18px;margin-top:14px}.output.show{display:block}pre{white-space:pre-wrap;word-break:break-all;background:#0f1722;border:1px solid #2c3b4c;border-radius:8px;padding:11px;margin:8px 0 12px;font-size:.78rem}.install{display:block;text-align:center;background:#0f1722;border:1px solid var(--accent);padding:11px;border-radius:8px;margin-bottom:12px;text-decoration:none;font-weight:700}.status{font-size:.83rem;margin-top:10px;color:var(--dim)}.status.error{color:var(--danger)}@media(max-width:560px){.panel{padding:22px 18px}.quality{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="panel">
   <h1>StreamBridge Setup</h1>
-  <p class="subtitle">Connect an Emby or Jellyfin server to Stremio<br><a href="https://github.com/Ibbolufc/streambridge" target="_blank" rel="noopener">StreamBridge on GitHub</a></p>
+  <p class="subtitle">Stream from your Emby server to Stremio<br><a href="https://github.com/Ibbolufc/streambridge" target="_blank" rel="noopener">StreamBridge on GitHub</a></p>
 
-  <h2>1 · Choose your media server</h2>
-  <div class="server-grid" id="serverGrid">
-    <label class="server-card selected" data-type="emby">
-      <input type="radio" name="serverChoice" value="emby" checked>
-      <span class="server-name">Emby</span>
-      <span class="server-desc">Connect to an Emby media server</span>
-    </label>
-    <label class="server-card" data-type="jellyfin">
-      <input type="radio" name="serverChoice" value="jellyfin">
-      <span class="server-name">Jellyfin</span>
-      <span class="server-desc">Connect to a Jellyfin media server</span>
-    </label>
-  </div>
-
-  <h2>2 · Fetch User ID & Token <span class="backend-badge" id="authBadge">Emby</span></h2>
+  <h2>1 · Fetch User ID & Token</h2>
   <div class="box">
     <form id="helper">
-      <div class="field">
-        <label for="serverUrl">Server URL</label>
-        <input id="serverUrl" name="url" type="text" placeholder="https://media.example.com" required>
-        <small>Use the public URL that StreamBridge can reach.</small>
-      </div>
-      <div class="field">
-        <label for="serverUser">Server Username</label>
-        <input id="serverUser" name="user" type="text" placeholder="Your server username" required>
-      </div>
-      <div class="field">
-        <label for="serverPass">Server Password</label>
-        <input id="serverPass" name="pass" type="password" placeholder="Your server password">
-      </div>
+      <div class="field"><label>Emby Server URL</label><input name="url" type="text" placeholder="https://media.example.com" required><small>Use the Emby URL that StreamBridge can reach.</small></div>
+      <div class="field"><label>Emby Username</label><input name="user" type="text" required></div>
+      <div class="field"><label>Emby Password</label><input name="pass" type="password"></div>
       <button id="helperBtn" type="submit">Get Access Info</button>
       <div id="helperStatus" class="status"></div>
     </form>
   </div>
 
-  <div id="helperOut" class="output">
-    <small>User ID</small><pre id="uid"></pre>
-    <small>Access Token</small><pre id="tok"></pre>
-  </div>
+  <div id="helperOut" class="output"><small>User ID</small><pre id="uid"></pre><small>Access Token</small><pre id="tok"></pre></div>
 
   <hr>
-
-  <h2>3 · Generate Install Link <span class="backend-badge" id="configBadge">Emby</span></h2>
+  <h2>2 · Generate Install Link</h2>
   <form id="cfg">
-    <input type="hidden" name="serverType" id="cfgServerType" value="emby">
     <div class="box">
-      <div class="field">
-        <label>Server URL</label>
-        <input name="serverUrl" type="text" required>
-      </div>
-      <div class="field">
-        <label>User ID</label>
-        <input name="userId" type="text" required>
-      </div>
-      <div class="field">
-        <label>Access Token / API Key</label>
-        <input name="accessToken" type="text" required>
-      </div>
+      <div class="field"><label>Server URL</label><input name="serverUrl" type="text" required></div>
+      <div class="field"><label>User ID</label><input name="userId" type="text" required></div>
+      <div class="field"><label>Access Token / API Key</label><input name="accessToken" type="text" required></div>
     </div>
 
     <div class="box">
       <h3>Advanced Options</h3>
-      <div class="field">
-        <label class="check"><input type="checkbox" name="showServerName"> Show server hostname in add-on name</label>
-        <small>Usually best left off for privacy.</small>
-      </div>
-      <div class="field">
-        <label for="streamName">Stream Name</label>
-        <input id="streamName" name="streamName" type="text" placeholder="Emby">
-        <small id="streamNameHint">Defaults to “Emby”.</small>
-      </div>
-      <div class="field">
-        <label class="check"><input type="checkbox" name="includeSubtitles" checked> Include subtitles from server</label>
-      </div>
-      <div class="field">
-        <label>Hide Stream Types</label>
-        <div class="quality-grid">
-          <label class="check"><input type="checkbox" name="hideStreamTypes" value="4K"> 4K</label>
-          <label class="check"><input type="checkbox" name="hideStreamTypes" value="1080p"> 1080p</label>
-          <label class="check"><input type="checkbox" name="hideStreamTypes" value="DV"> Dolby Vision</label>
-          <label class="check"><input type="checkbox" name="hideStreamTypes" value="HDR"> All HDR</label>
-        </div>
-      </div>
+      <div class="field"><label class="check"><input type="checkbox" name="showServerName"> Show server hostname in add-on name</label><small>Usually best left off for privacy.</small></div>
+      <div class="field"><label>Stream Name</label><input name="streamName" type="text" placeholder="Emby"><small>Defaults to “Emby”.</small></div>
+      <div class="field"><label class="check"><input type="checkbox" name="includeSubtitles" checked> Include subtitles from Emby</label></div>
+      <div class="field"><label>Hide Stream Types</label><div class="quality">
+        <label class="check"><input type="checkbox" name="hideStreamTypes" value="4K"> 4K</label>
+        <label class="check"><input type="checkbox" name="hideStreamTypes" value="1080p"> 1080p</label>
+        <label class="check"><input type="checkbox" name="hideStreamTypes" value="DV"> Dolby Vision</label>
+        <label class="check"><input type="checkbox" name="hideStreamTypes" value="HDR"> All HDR</label>
+      </div></div>
     </div>
-
     <button type="submit">Create Install Link</button>
   </form>
 
   <div id="cfgOut" class="output"></div>
 </div>
-
 <script>
-const $ = selector => document.querySelector(selector);
-let selectedServerType = 'emby';
+const $=s=>document.querySelector(s);
+const normalizeUrl=v=>String(v||'').trim().replace(/\/+$/,'');
+function encodeConfig(config){const bytes=new TextEncoder().encode(JSON.stringify(config));let binary='';bytes.forEach(b=>binary+=String.fromCharCode(b));return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function decodeConfig(value){let b=value.replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';const bin=atob(b);const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));return JSON.parse(new TextDecoder().decode(bytes))}
 
-function labelFor(type){ return type === 'jellyfin' ? 'Jellyfin' : 'Emby'; }
+$('#helper').addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.target);const serverUrl=normalizeUrl(f.get('url'));const username=String(f.get('user')||'');const password=String(f.get('pass')||'');const btn=$('#helperBtn');const status=$('#helperStatus');if(!serverUrl.startsWith('http://')&&!serverUrl.startsWith('https://')){status.className='status error';status.textContent='Server URL must start with http:// or https://';return}btn.disabled=true;btn.textContent='Connecting to Emby…';status.className='status';status.textContent='';try{const r=await fetch('/api/get-emby-tokens',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({serverUrl,username,password})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.err||`HTTP ${r.status}`);$('#uid').textContent=data.Id||'';$('#tok').textContent=data.AccessToken||'';$('#helperOut').classList.add('show');const cfg=$('#cfg');cfg.serverUrl.value=serverUrl;cfg.userId.value=data.Id||'';cfg.accessToken.value=data.AccessToken||'';status.textContent='Emby connected successfully.'}catch(err){status.className='status error';status.textContent=err.message}finally{btn.disabled=false;btn.textContent='Get Access Info'}});
 
-function setServerType(type){
-  selectedServerType = type === 'jellyfin' ? 'jellyfin' : 'emby';
-  document.querySelectorAll('.server-card').forEach(card => {
-    const selected = card.dataset.type === selectedServerType;
-    card.classList.toggle('selected', selected);
-    card.querySelector('input').checked = selected;
-  });
+$('#cfg').addEventListener('submit',e=>{e.preventDefault();const f=new FormData(e.target);const cfg={serverUrl:normalizeUrl(f.get('serverUrl')),userId:String(f.get('userId')||''),accessToken:String(f.get('accessToken')||''),showServerName:f.get('showServerName')!==null};if(!cfg.serverUrl||!cfg.userId||!cfg.accessToken){alert('Please fill in Server URL, User ID and Access Token.');return}const streamName=String(f.get('streamName')||'').trim();if(streamName)cfg.streamName=streamName;const hidden=f.getAll('hideStreamTypes');if(hidden.length)cfg.hideStreamTypes=hidden;if(f.get('includeSubtitles')===null)cfg.includeSubtitles=false;const encoded=encodeConfig(cfg);const manifestUrl=`${location.origin}/${encoded}/manifest.json`;const stremioUrl=`stremio://${location.host}/${encoded}/manifest.json`;const out=$('#cfgOut');out.innerHTML='';const install=document.createElement('a');install.href=stremioUrl;install.className='install';install.textContent='Install StreamBridge in Stremio';const label=document.createElement('small');label.textContent='Or copy this manifest URL:';const pre=document.createElement('pre');pre.textContent=manifestUrl;const copy=document.createElement('button');copy.type='button';copy.textContent='Copy Manifest URL';copy.onclick=async()=>{await navigator.clipboard.writeText(manifestUrl);copy.textContent='Copied!';setTimeout(()=>copy.textContent='Copy Manifest URL',1500)};out.append(install,label,pre,copy);out.classList.add('show')});
 
-  const label = labelFor(selectedServerType);
-  $('#cfgServerType').value = selectedServerType;
-  $('#authBadge').textContent = label;
-  $('#configBadge').textContent = label;
-  $('#streamName').placeholder = label;
-  $('#streamNameHint').textContent = `Defaults to “${label}”.`;
-}
-
-document.querySelectorAll('.server-card').forEach(card => {
-  card.addEventListener('click', () => setServerType(card.dataset.type));
-});
-
-function normalizeUrl(value){ return String(value || '').trim().replace(/\/+$/, ''); }
-
-async function authenticateServer(serverUrl, username, password){
-  const response = await fetch('/api/get-server-tokens', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      serverType:selectedServerType,
-      serverUrl,
-      username,
-      password:password || ''
-    })
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if(!response.ok) throw new Error(data.err || `HTTP ${response.status}`);
-  return data;
-}
-
-$('#helper').addEventListener('submit', async event => {
-  event.preventDefault();
-  const form = new FormData(event.target);
-  const url = normalizeUrl(form.get('url'));
-  const username = String(form.get('user') || '');
-  const password = String(form.get('pass') || '');
-  const button = $('#helperBtn');
-  const status = $('#helperStatus');
-
-  if(!url.startsWith('http://') && !url.startsWith('https://')){
-    status.className = 'status error';
-    status.textContent = 'Server URL must start with http:// or https://';
-    return;
-  }
-
-  try { new URL(url); }
-  catch {
-    status.className = 'status error';
-    status.textContent = 'Please enter a valid server URL.';
-    return;
-  }
-
-  button.disabled = true;
-  button.textContent = `Connecting to ${labelFor(selectedServerType)}…`;
-  status.className = 'status';
-  status.textContent = '';
-
-  try{
-    const data = await authenticateServer(url, username, password);
-    $('#uid').textContent = data.Id || '';
-    $('#tok').textContent = data.AccessToken || '';
-    $('#helperOut').classList.add('show');
-
-    const cfg = $('#cfg');
-    cfg.serverUrl.value = url;
-    cfg.userId.value = data.Id || '';
-    cfg.accessToken.value = data.AccessToken || '';
-
-    status.textContent = `${labelFor(selectedServerType)} connected successfully.`;
-  }catch(error){
-    status.className = 'status error';
-    status.textContent = error.message;
-  }finally{
-    button.disabled = false;
-    button.textContent = 'Get Access Info';
-  }
-});
-
-function encodeConfig(config){
-  const bytes = new TextEncoder().encode(JSON.stringify(config));
-  let binary = '';
-  bytes.forEach(byte => binary += String.fromCharCode(byte));
-  return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-
-function decodeConfig(value){
-  let base64 = value.replace(/-/g,'+').replace(/_/g,'/');
-  while(base64.length % 4) base64 += '=';
-  const binary = atob(base64);
-  const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
-  return JSON.parse(new TextDecoder().decode(bytes));
-}
-
-$('#cfg').addEventListener('submit', event => {
-  event.preventDefault();
-  const form = new FormData(event.target);
-  const serverUrl = normalizeUrl(form.get('serverUrl'));
-
-  const cfg = {
-    serverType:selectedServerType,
-    serverUrl,
-    userId:String(form.get('userId') || ''),
-    accessToken:String(form.get('accessToken') || ''),
-    showServerName:form.get('showServerName') !== null
-  };
-
-  if(!cfg.serverUrl || !cfg.userId || !cfg.accessToken){
-    alert('Please fill in Server URL, User ID and Access Token.');
-    return;
-  }
-
-  try { new URL(cfg.serverUrl); }
-  catch {
-    alert('Please enter a valid server URL.');
-    return;
-  }
-
-  const streamName = String(form.get('streamName') || '').trim();
-  if(streamName) cfg.streamName = streamName;
-
-  const hiddenTypes = form.getAll('hideStreamTypes');
-  if(hiddenTypes.length) cfg.hideStreamTypes = hiddenTypes;
-
-  if(form.get('includeSubtitles') === null) cfg.includeSubtitles = false;
-
-  const encoded = encodeConfig(cfg);
-  const manifestUrl = `${location.origin}/${encoded}/manifest.json`;
-  const stremioUrl = `stremio://${location.host}/${encoded}/manifest.json`;
-  const out = $('#cfgOut');
-
-  out.innerHTML = '';
-  const install = document.createElement('a');
-  install.href = stremioUrl;
-  install.className = 'install-link';
-  install.textContent = `Install ${labelFor(selectedServerType)} StreamBridge in Stremio`;
-
-  const label = document.createElement('small');
-  label.textContent = 'Or copy this manifest URL:';
-
-  const pre = document.createElement('pre');
-  pre.textContent = manifestUrl;
-
-  const copy = document.createElement('button');
-  copy.type = 'button';
-  copy.textContent = 'Copy Manifest URL';
-  copy.addEventListener('click', async () => {
-    await navigator.clipboard.writeText(manifestUrl);
-    copy.textContent = 'Copied!';
-    setTimeout(() => copy.textContent = 'Copy Manifest URL', 1500);
-  });
-
-  out.append(install, label, pre, copy);
-  out.classList.add('show');
-});
-
-// If opened through /<cfg>/configure, prefill the existing configuration.
-(function prefillFromPath(){
-  const parts = location.pathname.split('/').filter(Boolean);
-  if(parts.length < 2 || parts[parts.length - 1] !== 'configure') return;
-
-  try{
-    const cfg = decodeConfig(parts[parts.length - 2]);
-    setServerType(cfg.serverType || 'emby');
-    const form = $('#cfg');
-    form.serverUrl.value = cfg.serverUrl || '';
-    form.userId.value = cfg.userId || '';
-    form.accessToken.value = cfg.accessToken || '';
-    form.showServerName.checked = cfg.showServerName === true;
-    form.streamName.value = cfg.streamName || '';
-    form.includeSubtitles.checked = cfg.includeSubtitles !== false;
-    document.querySelectorAll('input[name="hideStreamTypes"]').forEach(input => {
-      input.checked = Array.isArray(cfg.hideStreamTypes) && cfg.hideStreamTypes.includes(input.value);
-    });
-  }catch{}
-})();
-
-setServerType(selectedServerType);
+(function prefill(){const parts=location.pathname.split('/').filter(Boolean);if(parts.length<2||parts.at(-1)!=='configure')return;try{const cfg=decodeConfig(parts.at(-2));const form=$('#cfg');form.serverUrl.value=cfg.serverUrl||'';form.userId.value=cfg.userId||'';form.accessToken.value=cfg.accessToken||'';form.streamName.value=cfg.streamName||'';form.showServerName.checked=cfg.showServerName===true;form.includeSubtitles.checked=cfg.includeSubtitles!==false;for(const cb of form.querySelectorAll('input[name="hideStreamTypes"]'))cb.checked=(cfg.hideStreamTypes||[]).includes(cb.value)}catch{}})();
 </script>
 </body>
 </html>
