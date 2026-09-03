@@ -10,12 +10,17 @@ const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const axios = require("axios");
 const embyClient = require("./lib/embyClient");
+const siloClient = require("./lib/siloClient");
 const { redactServerUrl } = require("./lib/redact");
 const { version } = require("./package.json");
 require("dotenv").config();
 
 const PORT = process.env.PORT || 7000;
 const app = express();
+
+// StreamBridge is normally served behind nginx/Portainer reverse proxying.
+// Trust the first proxy so express-rate-limit can use X-Forwarded-For safely.
+app.set("trust proxy", 1);
 
 app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
@@ -49,7 +54,7 @@ app.post("/api/get-emby-tokens", embyAuthLimiter, async (req, res) => {
     return res.status(400).json({ err: "serverUrl and username are required" });
   }
 
-  if (!['emby', 'silo'].includes(backend)) {
+  if (!["emby", "silo"].includes(backend)) {
     return res.status(400).json({ err: "backend must be emby or silo" });
   }
 
@@ -187,7 +192,8 @@ app.get("/:cfg/stream/:type/:id.json", async (req, res) => {
   }
 
   try {
-    const raw = await embyClient.getStream(req.params.id, cfg);
+    const backendClient = cfg.backend === "silo" ? siloClient : embyClient;
+    const raw = await backendClient.getStream(req.params.id, cfg);
     const streamName = cfg.streamName || (cfg.backend === "silo" ? "Silo" : "Emby");
     const hideStreamTypes = cfg.hideStreamTypes || [];
 
