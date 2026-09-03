@@ -1,5 +1,5 @@
 /**
- * StreamBridge – Emby → Stremio addon
+ * StreamBridge – Emby/Silo → Stremio addon
  * Full Express server with parameterised manifest + stream routes.
  * User data is embedded in the URL path as a base64-url string.
  */
@@ -34,7 +34,7 @@ app.get("/health", (_req, res) => {
     status: "ok",
     service: "streambridge",
     version,
-    backend: "emby"
+    backends: ["emby", "silo"]
   });
 });
 
@@ -42,9 +42,14 @@ app.post("/api/get-emby-tokens", embyAuthLimiter, async (req, res) => {
   const serverUrl = typeof req.body?.serverUrl === "string" ? req.body.serverUrl.trim() : "";
   const username = typeof req.body?.username === "string" ? req.body.username : "";
   const password = typeof req.body?.password === "string" ? req.body.password : "";
+  const backend = String(req.body?.backend || "emby").toLowerCase();
 
   if (!serverUrl || !username) {
     return res.status(400).json({ err: "serverUrl and username are required" });
+  }
+
+  if (!['emby', 'silo'].includes(backend)) {
+    return res.status(400).json({ err: "backend must be emby or silo" });
   }
 
   const normalizedUrl = serverUrl.replace(/\/+$/, "");
@@ -67,7 +72,7 @@ app.post("/api/get-emby-tokens", embyAuthLimiter, async (req, res) => {
 
     if (ax.status !== 200) {
       const msg = ax.data?.Message || ax.data?.message || `HTTP ${ax.status}`;
-      console.warn("Auth failed:", redactServerUrl(normalizedUrl), "→", ax.status, msg);
+      console.warn(`${backend} auth failed:`, redactServerUrl(normalizedUrl), "→", ax.status, msg);
       return res.status(400).json({ err: msg });
     }
 
@@ -76,18 +81,19 @@ app.post("/api/get-emby-tokens", embyAuthLimiter, async (req, res) => {
     const serverId = ax.data?.ServerId;
 
     if (!userId || !accessToken) {
-      console.warn("Auth failed:", redactServerUrl(normalizedUrl), "→ invalid response");
+      console.warn(`${backend} auth failed:`, redactServerUrl(normalizedUrl), "→ invalid response");
       return res.status(502).json({ err: "Invalid response from server" });
     }
 
     return res.json({
       Id: userId,
       AccessToken: accessToken,
-      ServerId: serverId != null ? serverId : undefined
+      ServerId: serverId != null ? serverId : undefined,
+      Backend: backend
     });
   } catch (e) {
     const msg = e?.response?.data?.Message || e?.response?.data?.message || e?.code || e?.message || "Request failed";
-    console.warn("Auth failed:", redactServerUrl(normalizedUrl), msg);
+    console.warn(`${backend} auth failed:`, redactServerUrl(normalizedUrl), msg);
     return res.status(502).json({ err: String(msg) });
   }
 });
@@ -96,8 +102,8 @@ function baseManifest() {
   return {
     id: "org.streambridge.embyresolver",
     version,
-    name: "StreamBridge: Emby to Stremio",
-    description: "Stream media from your Emby server using IMDb/TMDB/Tvdb/Anidb IDs.",
+    name: "StreamBridge",
+    description: "Stream media from your Emby or Silo server using IMDb/TMDB/TVDB/AniDB IDs.",
     catalogs: [],
     resources: [
       {
@@ -109,7 +115,8 @@ function baseManifest() {
     types: ["movie", "series"],
     behaviorHints: { configurable: true, configurationRequired: true },
     config: [
-      { key: "serverUrl", type: "text", title: "Server URL (Emby)", required: true },
+      { key: "backend", type: "select", title: "Server Type", options: ["emby", "silo"], default: "emby", required: true },
+      { key: "serverUrl", type: "text", title: "Server URL", required: true },
       { key: "userId", type: "text", title: "User ID", required: true },
       { key: "accessToken", type: "text", title: "Access Token", required: true }
     ]
@@ -120,8 +127,10 @@ function decodeCfg(str) {
   const cfg = JSON.parse(Buffer.from(str, "base64url").toString("utf8"));
 
   if (cfg.serverUrl) cfg.serverUrl = cfg.serverUrl.replace(/\/+$/, "");
+  if (!cfg.backend) cfg.backend = "emby";
+  cfg.backend = String(cfg.backend).toLowerCase();
   if (cfg.showServerName === undefined) cfg.showServerName = false;
-  if (!cfg.streamName) cfg.streamName = "Emby";
+  if (!cfg.streamName) cfg.streamName = cfg.backend === "silo" ? "Silo" : "Emby";
   if (!cfg.hideStreamTypes) cfg.hideStreamTypes = [];
 
   return cfg;
@@ -153,6 +162,8 @@ app.get("/:cfg/manifest.json", (req, res) => {
 
   const mf = baseManifest();
   mf.id += "." + req.params.cfg.slice(0, 8);
+  const backendLabel = cfg.backend === "silo" ? "Silo" : "Emby";
+  mf.name = `StreamBridge: ${backendLabel} to Stremio`;
 
   if (cfg.showServerName === true) {
     const serverHostname = cfg.serverUrl ? cfg.serverUrl.replace(/^https?:\/\//, "") : "Unknown Server";
@@ -177,7 +188,7 @@ app.get("/:cfg/stream/:type/:id.json", async (req, res) => {
 
   try {
     const raw = await embyClient.getStream(req.params.id, cfg);
-    const streamName = cfg.streamName || "Emby";
+    const streamName = cfg.streamName || (cfg.backend === "silo" ? "Silo" : "Emby");
     const hideStreamTypes = cfg.hideStreamTypes || [];
 
     const streams = (raw || [])
@@ -213,5 +224,5 @@ app.get("/:cfg/configure", (_req, res) =>
   res.sendFile(path.join(__dirname, "public", "configure.html")));
 
 app.listen(PORT, () =>
-  console.log(`🚀 StreamBridge v${version} (Emby) up at http://localhost:${PORT}/<cfg>/manifest.json`)
+  console.log(`🚀 StreamBridge v${version} (Emby + Silo) up at http://localhost:${PORT}/<cfg>/manifest.json`)
 );
