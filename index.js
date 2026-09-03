@@ -30,12 +30,7 @@ const embyAuthLimiter = rateLimit({
 });
 
 app.get("/health", (_req, res) => {
-  res.json({
-    status: "ok",
-    service: "streambridge",
-    version,
-    backends: ["emby", "silo"]
-  });
+  res.json({ status: "ok", service: "streambridge", version, backends: ["emby", "silo"] });
 });
 
 app.post("/api/get-emby-tokens", embyAuthLimiter, async (req, res) => {
@@ -76,12 +71,7 @@ app.post("/api/get-emby-tokens", embyAuthLimiter, async (req, res) => {
     const serverId = ax.data?.ServerId;
     if (!userId || !accessToken) return res.status(502).json({ err: "Invalid response from server" });
 
-    return res.json({
-      Id: userId,
-      AccessToken: accessToken,
-      ServerId: serverId != null ? serverId : undefined,
-      Backend: backend
-    });
+    return res.json({ Id: userId, AccessToken: accessToken, ServerId: serverId != null ? serverId : undefined, Backend: backend });
   } catch (e) {
     const msg = e?.response?.data?.Message || e?.response?.data?.message || e?.code || e?.message || "Request failed";
     console.warn(`${backend} auth failed:`, redactServerUrl(normalizedUrl), msg);
@@ -134,7 +124,7 @@ function shouldFilterStream(stream, hideStreamTypes) {
 app.get("/:cfg/manifest.json", (req, res) => {
   let cfg;
   try { cfg = decodeCfg(req.params.cfg); }
-  catch (err) { return res.status(400).json({ err: "Bad config in URL" }); }
+  catch { return res.status(400).json({ err: "Bad config in URL" }); }
 
   const mf = baseManifest();
   mf.id += "." + req.params.cfg.slice(0, 8);
@@ -152,7 +142,6 @@ app.get("/:cfg/stream/:type/:id.json", async (req, res) => {
   let cfg;
   try { cfg = decodeCfg(req.params.cfg); }
   catch { return res.json({ streams: [] }); }
-
   if (!cfg.serverUrl || !cfg.userId || !cfg.accessToken) return res.json({ streams: [] });
 
   try {
