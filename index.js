@@ -44,13 +44,8 @@ app.post("/api/get-emby-tokens", embyAuthLimiter, async (req, res) => {
   const password = typeof req.body?.password === "string" ? req.body.password : "";
   const backend = String(req.body?.backend || "emby").toLowerCase();
 
-  if (!serverUrl || !username) {
-    return res.status(400).json({ err: "serverUrl and username are required" });
-  }
-
-  if (!['emby', 'silo'].includes(backend)) {
-    return res.status(400).json({ err: "backend must be emby or silo" });
-  }
+  if (!serverUrl || !username) return res.status(400).json({ err: "serverUrl and username are required" });
+  if (!['emby', 'silo'].includes(backend)) return res.status(400).json({ err: "backend must be emby or silo" });
 
   const normalizedUrl = serverUrl.replace(/\/+$/, "");
   if (!normalizedUrl.startsWith("http://") && !normalizedUrl.startsWith("https://")) {
@@ -79,11 +74,7 @@ app.post("/api/get-emby-tokens", embyAuthLimiter, async (req, res) => {
     const userId = ax.data?.User?.Id;
     const accessToken = ax.data?.AccessToken;
     const serverId = ax.data?.ServerId;
-
-    if (!userId || !accessToken) {
-      console.warn(`${backend} auth failed:`, redactServerUrl(normalizedUrl), "→ invalid response");
-      return res.status(502).json({ err: "Invalid response from server" });
-    }
+    if (!userId || !accessToken) return res.status(502).json({ err: "Invalid response from server" });
 
     return res.json({
       Id: userId,
@@ -105,13 +96,7 @@ function baseManifest() {
     name: "StreamBridge",
     description: "Stream media from your Emby or Silo server using IMDb/TMDB/TVDB/AniDB IDs.",
     catalogs: [],
-    resources: [
-      {
-        name: "stream",
-        types: ["movie", "series"],
-        idPrefixes: ["tt", "imdb:", "tmdb:"]
-      }
-    ],
+    resources: [{ name: "stream", types: ["movie", "series"], idPrefixes: ["tt", "imdb:", "tmdb:"] }],
     types: ["movie", "series"],
     behaviorHints: { configurable: true, configurationRequired: true },
     config: [
@@ -125,72 +110,55 @@ function baseManifest() {
 
 function decodeCfg(str) {
   const cfg = JSON.parse(Buffer.from(str, "base64url").toString("utf8"));
-
   if (cfg.serverUrl) cfg.serverUrl = cfg.serverUrl.replace(/\/+$/, "");
   if (!cfg.backend) cfg.backend = "emby";
   cfg.backend = String(cfg.backend).toLowerCase();
   if (cfg.showServerName === undefined) cfg.showServerName = false;
   if (!cfg.streamName) cfg.streamName = cfg.backend === "silo" ? "Silo" : "Emby";
   if (!cfg.hideStreamTypes) cfg.hideStreamTypes = [];
-
   return cfg;
 }
 
 function shouldFilterStream(stream, hideStreamTypes) {
   if (!hideStreamTypes || hideStreamTypes.length === 0) return false;
-
   const mediaInfo = stream.mediaInfo || {};
   const qualityTag = mediaInfo.qualityTag || "";
   const hdrTag = mediaInfo.hdrTag || "";
-
   if (hideStreamTypes.includes("4K") && (qualityTag.includes("4K") || qualityTag === "2160p")) return true;
   if (hideStreamTypes.includes("1080p") && qualityTag === "1080p") return true;
   if (hideStreamTypes.includes("DV") && (hdrTag === "DV" || hdrTag === "DolbyVision")) return true;
   if (hideStreamTypes.includes("HDR") && hdrTag && (hdrTag.includes("HDR") || hdrTag === "HLG" || hdrTag === "DV" || hdrTag === "DolbyVision")) return true;
-
   return false;
 }
 
 app.get("/:cfg/manifest.json", (req, res) => {
   let cfg;
-  try {
-    cfg = decodeCfg(req.params.cfg);
-  } catch (err) {
-    console.error("[ERROR] Failed to decode config:", err.message);
-    return res.status(400).json({ err: "Bad config in URL" });
-  }
+  try { cfg = decodeCfg(req.params.cfg); }
+  catch (err) { return res.status(400).json({ err: "Bad config in URL" }); }
 
   const mf = baseManifest();
   mf.id += "." + req.params.cfg.slice(0, 8);
   const backendLabel = cfg.backend === "silo" ? "Silo" : "Emby";
   mf.name = `StreamBridge: ${backendLabel} to Stremio`;
-
   if (cfg.showServerName === true) {
     const serverHostname = cfg.serverUrl ? cfg.serverUrl.replace(/^https?:\/\//, "") : "Unknown Server";
     mf.name += ` (${serverHostname})`;
   }
-
   mf.behaviorHints.configurationRequired = false;
   res.json(mf);
 });
 
 app.get("/:cfg/stream/:type/:id.json", async (req, res) => {
   let cfg;
-  try {
-    cfg = decodeCfg(req.params.cfg);
-  } catch {
-    return res.json({ streams: [] });
-  }
+  try { cfg = decodeCfg(req.params.cfg); }
+  catch { return res.json({ streams: [] }); }
 
-  if (!cfg.serverUrl || !cfg.userId || !cfg.accessToken) {
-    return res.json({ streams: [] });
-  }
+  if (!cfg.serverUrl || !cfg.userId || !cfg.accessToken) return res.json({ streams: [] });
 
   try {
     const raw = await embyClient.getStream(req.params.id, cfg);
     const streamName = cfg.streamName || (cfg.backend === "silo" ? "Silo" : "Emby");
     const hideStreamTypes = cfg.hideStreamTypes || [];
-
     const streams = (raw || [])
       .filter(s => s.directPlayUrl)
       .filter(s => !shouldFilterStream(s, hideStreamTypes))
@@ -206,7 +174,6 @@ app.get("/:cfg/stream/:type/:id.json", async (req, res) => {
         },
         subtitles: cfg.includeSubtitles === false ? [] : (s.subtitles || [])
       }));
-
     res.set("Cache-Control", streams.length > 0 ? "public, max-age=120" : "no-cache");
     res.json({ streams });
   } catch (e) {
@@ -216,13 +183,7 @@ app.get("/:cfg/stream/:type/:id.json", async (req, res) => {
 });
 
 app.get("/manifest.json", (_req, res) => res.json(baseManifest()));
+app.get("/configure", (_req, res) => res.sendFile(path.join(__dirname, "public", "configure.html")));
+app.get("/:cfg/configure", (_req, res) => res.sendFile(path.join(__dirname, "public", "configure.html")));
 
-app.get("/configure", (_req, res) =>
-  res.sendFile(path.join(__dirname, "public", "configure.html")));
-
-app.get("/:cfg/configure", (_req, res) =>
-  res.sendFile(path.join(__dirname, "public", "configure.html")));
-
-app.listen(PORT, () =>
-  console.log(`🚀 StreamBridge v${version} (Emby + Silo) up at http://localhost:${PORT}/<cfg>/manifest.json`)
-);
+app.listen(PORT, () => console.log(`🚀 StreamBridge v${version} (Emby + Silo) up at http://localhost:${PORT}/<cfg>/manifest.json`));
